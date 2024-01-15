@@ -1,11 +1,22 @@
-const express = require("express");
+import express from "express";
+import mongoose from "mongoose";
+import "dotenv/config";
+
+import ticketRouter from "./src/routes/ticket.js";
+import userRouter from "./src/routes/user.js";
+
 const app = express();
 
-app.get("/", function (req, res) {
-  res.send("Hello World");
-});
+app.use(express.json());
 
-const emeilas = "gintare@gmail.com";
-console.log(emeilas.indexOf("@"), "a");
+mongoose
+  .connect(process.env.MONGO_CONNECTION)
+  .then(() => console.log("Connected to DB"))
+  .catch((err) => {
+    console.log(err);
+  });
 
-app.listen(3000);
+app.use(userRouter);
+app.use(ticketRouter);
+
+app.listen(process.env.PORT);
