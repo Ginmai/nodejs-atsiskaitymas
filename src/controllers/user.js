@@ -29,9 +29,24 @@ const SIGN_UP = async (req, res) => {
 
     const response = await user.save();
 
-    return res
-      .status(200)
-      .json({ message: "User was created", user: response });
+    const jwtToken = jwt.sign(
+      { email: user.email, id: user._id },
+      process.env.JWT_SECRET,
+      { expiresIn: "2h" }
+    );
+
+    const jwtRefreshToken = jwt.sign(
+      { email: user.email, id: user._id },
+      process.env.JWT_REFRESH_SECRET,
+      { expiresIn: "1d" }
+    );
+
+    return res.status(200).json({
+      message: "User was created",
+      user: response,
+      jwt_token: jwtToken,
+      jwt_refresh_token: jwtRefreshToken,
+    });
   } catch (err) {
     console.log(err);
     return res.status(500).json({ message: "something went wrong" });
@@ -55,17 +70,54 @@ const LOGIN = async (req, res) => {
       return res.status(404).json({ message: "Bad auth" });
     }
 
-    const token = jwt.sign(
+    const jwtToken = jwt.sign(
       { email: user.email, id: user._id },
       process.env.JWT_SECRET,
       { expiresIn: "2h" }
     );
 
-    return res.status(200).json({ token });
+    const jwtRefreshToken = jwt.sign(
+      { email: user.email, id: user._id },
+      process.env.JWT_REFRESH_SECRET,
+      { expiresIn: "1d" }
+    );
+
+    return res.status(200).json({
+      jwt_token: jwtToken,
+      jwt_refresh_token: jwtRefreshToken,
+    });
   } catch (err) {
     console.log(err);
     return res.status(500).json({ message: "something went wrong" });
   }
 };
 
-export { SIGN_UP, LOGIN };
+const REFRESH_TOKEN = async (req, res) => {
+  try {
+    const jwtRefreshToken = req.body.jwt_refresh_token;
+    const decoded = jwt.verify(jwtRefreshToken, process.env.JWT_REFRESH_SECRET);
+    console.log(decoded);
+    const user = await UserModel.findById(decoded.id);
+
+    const jwtToken = jwt.sign(
+      { email: user.email, id: user._id },
+      process.env.JWT_SECRET,
+      { expiresIn: "2h" }
+    );
+
+    return res.status(200).json({
+      jwt_token: jwtToken,
+      jwt_refresh_token: jwtRefreshToken,
+    });
+  } catch (err) {
+    return res.status(400).json({ message: "user should login" });
+  }
+};
+
+const GET_ALL_USERS = async (req, res) => {
+  const users = await UserModel.find().sort({ name: "asc" });
+
+  return res.status(200).json(users);
+};
+
+export { SIGN_UP, LOGIN, REFRESH_TOKEN, GET_ALL_USERS };
