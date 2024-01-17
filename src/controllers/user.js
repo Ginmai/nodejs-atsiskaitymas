@@ -25,6 +25,8 @@ const SIGN_UP = async (req, res) => {
       name: name,
       email: email,
       password: hash,
+      bought_tickets: [],
+      money_balance: 120,
     });
 
     const response = await user.save();
@@ -120,4 +122,18 @@ const GET_ALL_USERS = async (req, res) => {
   return res.status(200).json(users);
 };
 
-export { SIGN_UP, LOGIN, REFRESH_TOKEN, GET_ALL_USERS };
+const GET_USER_BY_ID = async (req, res) => {
+  try {
+    const user = await UserModel.findById(req.params.id);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    return res.status(200).json({ user: user });
+  } catch (err) {
+    console.log(err);
+    return res.status(404).json({ message: "User not found" });
+  }
+};
+
+export { SIGN_UP, LOGIN, REFRESH_TOKEN, GET_ALL_USERS, GET_USER_BY_ID };
